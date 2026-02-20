@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가구세상</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f7f5f2;
+      --card:     #ffffff;
+      --primary:  #c8622a;
+      --primary-l:#fff0e8;
+      --ink:      #1c1510;
+      --ink-2:    #5a4a3a;
+      --ink-3:    #a8907a;
+      --border:   #e8ddd4;
+      --radius:   14px;
+      --shadow:   0 2px 10px rgba(0,0,0,.07);
+      --shadow-h: 0 8px 28px rgba(200,98,42,.18);
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--ink);
+    }
+
+    /* ── 공정위 마퀴 ── */
+    .ftc-banner {
+      background: #1c1510;
+      color: #c8a882;
+      font-size: 0.74rem;
+      padding: 8px 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .ftc-track {
+      display: inline-block;
+      animation: marquee 24s linear infinite;
+    }
+    .ftc-track span { margin: 0 60px; }
+    @keyframes marquee {
+      from { transform: translateX(100vw); }
+      to   { transform: translateX(-100%); }
+    }
+
+    /* ── 레이아웃 ── */
+    .wrap {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 36px 20px 64px;
+    }
+
+    /* ── 프로필 ── */
+    .profile {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeUp .5s ease both .05s;
+    }
+    .avatar {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 14px;
+      box-shadow: 0 4px 20px rgba(200,98,42,.3);
+    }
+    .avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .profile h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .profile p  { font-size: 0.88rem; color: var(--ink-2); line-height: 1.75; }
+
+    /* ── 섹션 타이틀 ── */
+    .section-title {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ink-3); margin: 0 0 14px 2px;
+    }
+
+    /* ── 상품 그리드 ── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .product-card {
+      display: block; text-decoration: none; color: var(--ink);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      position: relative;
+    }
+    .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-h); border-color: var(--primary); }
+    .product-card:active { transform: translateY(0); }
+
+    .prod-thumb {
+      width: 100%; aspect-ratio: 1/1; object-fit: cover;
+      display: block; background: #f0ebe4;
+    }
+    .prod-placeholder {
+      width: 100%; aspect-ratio: 1/1;
+      background: var(--primary-l);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem;
+    }
+    .prod-info { padding: 10px 12px 13px; }
+    .prod-name {
+      font-size: 0.82rem; font-weight: 600; line-height: 1.45; margin-bottom: 5px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .prod-price { font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 5px; }
+    .prod-cta {
+      display: inline-block; font-size: 0.7rem; font-weight: 600;
+      color: var(--primary); background: var(--primary-l);
+      padding: 3px 8px; border-radius: 6px;
+    }
+
+    /* 관리모드 수정/삭제 버튼 */
+    .card-actions {
+      display: none;
+      position: absolute; top: 6px; right: 6px;
+      gap: 4px;
+    }
+    .admin-mode .card-actions { display: flex; }
+    .btn-edit, .btn-del {
+      border: none; border-radius: 6px; padding: 4px 8px;
+      font-size: 0.7rem; font-weight: 600; cursor: pointer; line-height: 1;
+    }
+    .btn-edit { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+    .btn-del  { background: #fee; color: #c00; border: 1px solid #fcc; }
+    .btn-edit:hover { background: var(--primary); color: #fff; }
+    .btn-del:hover  { background: #c00; color: #fff; }
+
+    /* 빈 상태 */
+    .empty-state {
+      grid-column: span 2; text-align: center;
+      padding: 40px 20px; color: var(--ink-3); font-size: 0.88rem;
+    }
+
+    /* ── 관리자 하단 바 ── */
+    .admin-bar {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #1c1510; color: #fff;
+      padding: 12px 20px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 100;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.3);
+    }
+    .admin-bar.visible { display: flex; }
+
+    .btn-add {
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 10px 22px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .2s;
+    }
+    .btn-add:hover { background: #a84e20; }
+
+    .btn-exit-admin {
+      background: transparent; color: #a8907a;
+      border: 1px solid #3a2e28; border-radius: 10px;
+      padding: 10px 16px; font-size: 0.82rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-exit-admin:hover { color: #fff; border-color: #aaa; }
+
+    /* ── 관리자 로그인 버튼 (우하단 숨김) ── */
+    .admin-login-btn {
+      position: fixed; bottom: 16px; right: 16px;
+      background: rgba(28,21,16,.6); color: #a8907a;
+      border: 1px solid rgba(168,144,122,.3); border-radius: 50%;
+      width: 36px; height: 36px; font-size: 0.9rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px);
+      transition: opacity .2s;
+      z-index: 99;
+    }
+    .admin-login-btn:hover { opacity: 1 !important; background: #1c1510; color: #fff; }
+
+    /* ── 모달 공통 ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-box {
+      background: #fff; border-radius: 18px;
+      padding: 28px 24px; width: 100%; max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: popIn .25s ease;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .modal-box h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 18px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink-2); margin-bottom: 5px; }
+    .field input, .field textarea {
+      width: 100%; padding: 10px 13px;
+      border: 1.5px solid var(--border); border-radius: 9px;
+      font-size: 0.88rem; font-family: inherit; color: var(--ink);
+      background: var(--bg); outline: none;
+      transition: border-color .18s;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--primary); }
+    .field textarea { height: 56px; resize: vertical; }
+
+    .field-hint { font-size: 0.72rem; color: var(--ink-3); margin-top: 4px; }
+
+    .modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+    .modal-btns button {
+      flex: 1; padding: 11px; border-radius: 10px;
+      font-size: 0.88rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: none; transition: background .18s;
+    }
+    .btn-confirm { background: var(--primary); color: #fff; }
+    .btn-confirm:hover { background: #a84e20; }
+    .btn-cancel  { background: #f0ebe4; color: var(--ink-2); }
+    .btn-cancel:hover { background: #e0d8d0; }
+
+    /* ── 푸터 ── */
+    footer {
+      text-align: center; margin-top: 40px;
+      font-size: 0.72rem; color: var(--ink-3); line-height: 1.85;
+    }
+
+    /* ── 애니메이션 ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── 다크모드 ── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141210; --card: #1e1a16; --primary: #e8823a;
+        --primary-l: #2a1808; --ink: #f0ebe4; --ink-2: #b09a84;
+        --ink-3: #6a5a48; --border: #2e2620;
+      }
+      .ftc-banner { background: #0c0a08; }
+      .modal-box { background: #1e1a16; color: #f0ebe4; }
+      .field input, .field textarea { background: #141210; color: #f0ebe4; border-color: #2e2620; }
+      .btn-cancel { background: #2e2620; color: #b09a84; }
+    }
+
+    @media (max-width: 380px) {
+      .product-grid { gap: 8px; }
+      .prod-name { font-size: 0.76rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 공정위 마퀴 -->
+  <div class="ftc-banner">
+    <div class="ftc-track">
+      <span>이 페이지의 링크는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</span>
+      <span>이 페이지의 링크는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- 프로필 -->
+    <div class="profile">
+      <div class="avatar"><img src="bed.png" alt="가구세상 로고"></div>
+      <h1>가구세상</h1>
+      <p>유튜브 쇼츠로 소개한 가성비 가구 &amp; 인테리어<br>마음에 드는 제품을 아래에서 바로 확인하세요 👇</p>
+    </div>
+
+    <div class="section-title">🛒 쿠팡에서 제품 보러가기</div>
+
+    <!-- 상품 그리드 -->
+    <div class="product-grid" id="productGrid"></div>
+
+    <footer>
+      <p>© 2026 가구세상</p>
+      <p>이 페이지의 링크는 쿠팡 파트너스 링크로,<br>구매 시 일정 수수료가 제공될 수 있습니다.</p>
+    </footer>
+  </div>
+
+  <!-- 관리자 접근 버튼 (우하단 숨김) -->
+  <button class="admin-login-btn" id="adminLoginBtn" title="관리자">⚙</button>
+
+  <!-- 관리자 하단 바 -->
+  <div class="admin-bar" id="adminBar">
+    <button class="btn-add" id="btnAdd">＋ 제품 추가</button>
+    <button class="btn-exit-admin" id="btnExitAdmin">관리 종료</button>
+  </div>
+
+  <!-- 비밀번호 모달 -->
+  <div class="modal-overlay" id="pwModal" style="display:none;">
+    <div class="modal-box">
+      <h2>🔒 관리자 로그인</h2>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="pwInput" placeholder="비밀번호 입력" autocomplete="off">
+        <div class="field-hint" id="pwError" style="color:#c00;display:none;">비밀번호가 틀렸습니다.</div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn-confirm" id="pwConfirm">확인</button>
+        <button class="btn-cancel"  id="pwCancel">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제품 추가/수정 모달 -->
+  <div class="modal-overlay" id="editModal" style="display:none;">
+    <div class="modal-box">
+      <h2 id="editModalTitle">➕ 제품 추가</h2>
+      <div class="field">
+        <label>상품명 *</label>
+        <input type="text" id="fName" placeholder="예) 1인 소파 패브릭 베이지">
+      </div>
+      <div class="field">
+        <label>가격</label>
+        <input type="text" id="fPrice" placeholder="예) ₩ 89,000">
+      </div>
+      <div class="field">
+        <label>쿠팡 파트너스 링크 *</label>
+        <input type="url" id="fLink" placeholder="https://link.coupang.com/a/...">
+      </div>
+      <div class="field">
+        <label>상품 이미지 URL</label>
+        <input type="url" id="fImg" placeholder="이미지 URL (없으면 이모지로 표시)">
+        <div class="field-hint">쿠팡 상품 이미지 우클릭 → 이미지 주소 복사</div>
+      </div>
+      <div class="field">
+        <label>이미지 없을 때 이모지</label>
+        <input type="text" id="fEmoji" placeholder="🛋️" maxlength="4">
+      </div>
+      <div class="modal-btns">
+        <button class="btn-confirm" id="editConfirm">저장</button>
+        <button class="btn-cancel"  id="editCancel">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════
+    //  설정 — 관리자 비밀번호 변경 시 여기만 수정하세요
+    // ════════════════════════════════════════════════════
+    const ADMIN_PASSWORD = '1234';
+    const API = '/api/products';
+
+    // ════════════════════════════════════════════════════
+    //  상태
+    // ════════════════════════════════════════════════════
+    let products  = [];
+    let isAdmin   = false;
+    let editingId = null;
+
+    const grid      = document.getElementById('productGrid');
+    const adminBar  = document.getElementById('adminBar');
+    const pwModal   = document.getElementById('pwModal');
+    const editModal = document.getElementById('editModal');
+
+    // ════════════════════════════════════════════════════
+    //  KV API — 불러오기
+    // ════════════════════════════════════════════════════
+    async function loadProducts() {
+      try {
+        const res = await fetch(API);
+        if (!res.ok) throw new Error('fetch fail');
+        const json = await res.json();
+        products = Array.isArray(json) ? json : [];
+      } catch(e) {
+        console.error('상품 로드 실패:', e);
+        products = [];
+      }
+      render();
+    }
+
+    // ════════════════════════════════════════════════════
+    //  가격 포맷 — 숫자 입력 시 ₩ 1,234,000 형식으로
+    // ════════════════════════════════════════════════════
+    function formatPrice(val) {
+      const num = val.replace(/[^0-9]/g, '');
+      if (!num) return '';
+      return '₩ ' + Number(num).toLocaleString('ko-KR');
+    }
+
+    document.getElementById('fPrice').addEventListener('input', function() {
+      const pos = this.selectionStart;
+      const prev = this.value.length;
+      this.value = formatPrice(this.value);
+      const diff = this.value.length - prev;
+      this.setSelectionRange(pos + diff, pos + diff);
+    });
+
+    // ════════════════════════════════════════════════════
+    //  KV API — 저장
+    // ════════════════════════════════════════════════════
+    async function save() {
+      await fetch(API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pw': ADMIN_PASSWORD
+        },
+        body: JSON.stringify(products)
+      });
+    }
+
+    // ════════════════════════════════════════════════════
+    //  렌더링
+    // ════════════════════════════════════════════════════
+    function render() {
+      grid.innerHTML = '';
+
+      if (products.length === 0) {
+        grid.innerHTML = '<div class="empty-state">등록된 제품이 없습니다.<br>관리자 모드에서 제품을 추가하세요.</div>';
+        return;
+      }
+
+      products.forEach((p, i) => {
+        const card = document.createElement('a');
+        card.className = 'product-card';
+        card.href      = p.link;
+        card.target    = '_blank';
+        card.rel       = 'noopener sponsored';
+        card.style.animationDelay = (0.08 + i * 0.06) + 's';
+        card.style.animation = 'fadeUp .45s ease both';
+
+        const thumb = p.img
+          ? `<img class="prod-thumb" src="${p.img}"
+               onerror="this.outerHTML='<div class=\\'prod-placeholder\\'>${p.emoji||'🛋️'}</div>'"
+               alt="${p.name}">`
+          : `<div class="prod-placeholder">${p.emoji || '🛋️'}</div>`;
+
+        card.innerHTML = `
+          ${thumb}
+          <div class="prod-info">
+            <div class="prod-name">${p.name}</div>
+            ${p.price ? `<div class="prod-price">${p.price}</div>` : ''}
+            <span class="prod-cta">쿠팡에서 보기 →</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn-edit" data-id="${p.id}">수정</button>
+            <button class="btn-del"  data-id="${p.id}">삭제</button>
+          </div>`;
+
+        card.querySelectorAll('.btn-edit, .btn-del').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = Number(btn.dataset.id);
+            if (btn.classList.contains('btn-del')) {
+              if (confirm('이 제품을 삭제할까요?')) {
+                products = products.filter(x => x.id !== id);
+                save(); render();
+              }
+            } else {
+              openEdit(id);
+            }
+          });
+        });
+
+        grid.appendChild(card);
+      });
+
+      if (isAdmin) grid.classList.add('admin-mode');
+      else         grid.classList.remove('admin-mode');
+    }
+
+    // ════════════════════════════════════════════════════
+    //  관리자 모드
+    // ════════════════════════════════════════════════════
+    document.getElementById('adminLoginBtn').addEventListener('click', () => {
+      if (isAdmin) return;
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwError').style.display = 'none';
+      pwModal.style.display = 'flex';
+      setTimeout(() => document.getElementById('pwInput').focus(), 100);
+    });
+
+    document.getElementById('pwConfirm').addEventListener('click', checkPw);
+    document.getElementById('pwCancel').addEventListener('click',  () => { pwModal.style.display = 'none'; });
+    document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPw(); });
+
+    function checkPw() {
+      if (document.getElementById('pwInput').value === ADMIN_PASSWORD) {
+        pwModal.style.display = 'none';
+        isAdmin = true;
+        adminBar.classList.add('visible');
+        document.getElementById('adminLoginBtn').style.opacity = '0';
+        grid.classList.add('admin-mode');
+        render();
+      } else {
+        document.getElementById('pwError').style.display = 'block';
+        document.getElementById('pwInput').value = '';
+        document.getElementById('pwInput').focus();
+      }
+    }
+
+    document.getElementById('btnExitAdmin').addEventListener('click', () => {
+      isAdmin = false;
+      adminBar.classList.remove('visible');
+      document.getElementById('adminLoginBtn').style.opacity = '';
+      grid.classList.remove('admin-mode');
+      render();
+    });
+
+    // ════════════════════════════════════════════════════
+    //  제품 추가 / 수정 모달
+    // ════════════════════════════════════════════════════
+    document.getElementById('btnAdd').addEventListener('click', () => openEdit(null));
+
+    function openEdit(id) {
+      editingId = id;
+      const p = id !== null ? products.find(x => x.id === id) : null;
+      document.getElementById('editModalTitle').textContent = p ? '✏️ 제품 수정' : '➕ 제품 추가';
+      document.getElementById('fName').value  = p?.name  || '';
+      document.getElementById('fPrice').value = p?.price || '';
+      document.getElementById('fLink').value  = p?.link  || '';
+      document.getElementById('fImg').value   = p?.img   || '';
+      document.getElementById('fEmoji').value = p?.emoji || '';
+      editModal.style.display = 'flex';
+      setTimeout(() => document.getElementById('fName').focus(), 100);
+    }
+
+    document.getElementById('editConfirm').addEventListener('click', saveProduct);
+    document.getElementById('editCancel').addEventListener('click',  () => { editModal.style.display = 'none'; });
+
+    async function saveProduct() {
+      const name = document.getElementById('fName').value.trim();
+      const link = document.getElementById('fLink').value.trim();
+      if (!name || !link) { alert('상품명과 링크는 필수입니다.'); return; }
+
+      const data = {
+        name,
+        price: document.getElementById('fPrice').value.trim(),
+        link,
+        img:   document.getElementById('fImg').value.trim(),
+        emoji: document.getElementById('fEmoji').value.trim() || '🛋️',
+      };
+
+      if (editingId !== null) {
+        const idx = products.findIndex(x => x.id === editingId);
+        products[idx] = { ...products[idx], ...data };
+      } else {
+        data.id = Date.now();
+        products.push(data);
+      }
+
+      editModal.style.display = 'none';
+      await save();
+      render();
+    }
+
+    [pwModal, editModal].forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+    });
+
+    // ── 최초 로드 ──
+    loadProducts();
+  </script>
+</body>
+</html>
